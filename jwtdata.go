@@ -1,4 +1,4 @@
-package jwtdata
+package tarkovloottool
 
 import "github.com/golang-jwt/jwt/v5"
 
