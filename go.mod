@@ -1,4 +1,4 @@
-module tarkovloottool
+module github.com/guronutf8/tarkovloottool
 
 go 1.21
 
