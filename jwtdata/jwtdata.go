@@ -1,4 +1,4 @@
-package tarkovloottool
+package jwtdata
 
 import (
 	"context"
@@ -49,13 +49,13 @@ func JWTUserFromPayload(payload []string) (JWTData, error) {
 	if !ok {
 		return JWTData{}, errors.New("metadata FromIncomingContext")
 	}
-	payload := incomingContext.Get("x-jwt-payload")
+	payload := incomingContext.Get("x-jwtdata-payload")
 	if len(payload) != 1 || payload[0] == "" {
 		return JWTData{}, errors.New("meta no have payload")
 	}
 
-	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
-	token, err := parser.ParseWithClaims(payload[0], &JWTData{}, func(t *jwt.Token) (interface{}, error) { return nil, nil })
+	parser := jwtdata.NewParser(jwtdata.WithoutClaimsValidation())
+	token, err := parser.ParseWithClaims(payload[0], &JWTData{}, func(t *jwtdata.Token) (interface{}, error) { return nil, nil })
 	if err != nil {
 		return JWTData{}, errors.Join(errors.New("ParseWithClaims"), err)
 	}
