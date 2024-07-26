@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
 )
@@ -32,11 +33,12 @@ func JWTUserFromPayload(payload []string) (JWTData, error) {
 		return JWTData{}, errors.New("meta no have payload")
 	}
 
-	sDec, _ := b64.StdEncoding.DecodeString(payload[0])
+	sDec, err := b64.RawURLEncoding.DecodeString(payload[0])
+	if err != nil {
+		return JWTData{}, errors.Join(err, fmt.Errorf("b64 decode payload"))
+	}
 	data := &JWTData{}
-	bytes := []byte("}")
-	sDec = append(sDec, bytes[0])
-	err := json.Unmarshal(sDec, &data)
+	err = json.Unmarshal(sDec, &data)
 	if err != nil {
 		return JWTData{}, errors.Join(errors.New("meta DecodeString"), err)
 	}

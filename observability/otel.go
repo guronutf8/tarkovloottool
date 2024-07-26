@@ -8,9 +8,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -50,8 +48,6 @@ func SetupOTelSDK(ctx context.Context, passBase64, endpoint, serviceName, nameSp
 	)
 
 	// Set up propagator.
-	//prop := newPropagator()
-	//otel.SetTextMapPropagator(prop)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	// Set up trace provider.
@@ -72,15 +68,6 @@ func SetupOTelSDK(ctx context.Context, passBase64, endpoint, serviceName, nameSp
 	shutdownFuncs = append(shutdownFuncs, meterProvider.Shutdown)
 	otel.SetMeterProvider(meterProvider)
 
-	//// Set up logger provider.
-	//loggerProvider, err := newLoggerProvider()
-	//if err != nil {
-	//	handleErr(err)
-	//	return
-	//}
-	//shutdownFuncs = append(shutdownFuncs, loggerProvider.Shutdown)
-	//global.SetLoggerProvider(loggerProvider)
-
 	return
 }
 
@@ -89,43 +76,12 @@ func newTraceProvider(passBase64, endpoint string, resource *resource.Resource) 
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(endpoint), // Replace otelAgentAddr with the endpoint obtained in the Prerequisites section.
 		otlptracegrpc.WithHeaders(map[string]string{"Authorization": "Basic " + passBase64}),
-		//otlptracegrpc.WithDialOption(grpc.WithBlock())
 	)
-
-	//conn, err := grpc.NewClient("localhost:4317",
-	//	grpc.WithTransportCredentials(insecure.NewCredentials()),
-	//	grpc.WithTimeout(3*time.Second),
-	//	grpc.WithBlock(),
-	//	//grpc.WithTransportCredentials(),
-	//)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
-	//}
-
-	//traceExporter, err := otlptracehttp.New(context.TODO(),
-	//	//otlptracehttp.WithTimeout(3*time.Second),
-	//	otlptracehttp.WithInsecure(),
-	//	otlptracehttp.WithEndpointURL("http://localhost:4318"),
-	//	otlptracehttp.WithHeaders(headers),
-	//)
-	//if err != nil {
-	//	panic(err)
-	//}
 
 	traceExporter, err := otlptrace.New(context.TODO(), traceClient)
 	if err != nil {
 		panic(err)
 	}
-
-	//traceExporter, err := otlptracegrpc.New(context.TODO(), otlptracegrpc.WithGRPCConn(conn))
-	//if err != nil {
-	//	return nil, err
-	//}
-	//traceExporter, err := stdouttrace.New(
-	//	stdouttrace.WithPrettyPrint())
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	traceProvider := trace.NewTracerProvider(
 		trace.WithBatcher(traceExporter,
@@ -138,11 +94,6 @@ func newTraceProvider(passBase64, endpoint string, resource *resource.Resource) 
 }
 
 func newMeterProvider(passBase64, endpoint string, resource *resource.Resource) (*metric.MeterProvider, error) {
-	//exporter, err := stdoutmetric.New()
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	exporter, err := otlpmetricgrpc.New(context.TODO(),
 		otlpmetricgrpc.WithInsecure(),
 		otlpmetricgrpc.WithEndpoint(endpoint), // Replace otelAgentAddr with the endpoint obtained in the Prerequisites section.
@@ -158,16 +109,4 @@ func newMeterProvider(passBase64, endpoint string, resource *resource.Resource) 
 			metric.WithInterval(5*time.Second))),
 	)
 	return meterProvider, nil
-}
-
-func newLoggerProvider() (*log.LoggerProvider, error) {
-	logExporter, err := stdoutlog.New()
-	if err != nil {
-		return nil, err
-	}
-
-	loggerProvider := log.NewLoggerProvider(
-		log.WithProcessor(log.NewBatchProcessor(logExporter)),
-	)
-	return loggerProvider, nil
 }
